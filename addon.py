@@ -29,7 +29,7 @@ def show_categories():
              } for category in categories]
     return plugin.finish(items, update_listing=True)
 
-
+@plugin.cached()
 @plugin.route('/genre/<category>/page/<page>')
 def show_category(category, page):
     category, has_next = rntm.get_category(category, page)
@@ -75,6 +75,10 @@ def show_video(video):
 def play_video(video):
     playback_url = rntm.get_video_url(video)
     return plugin.set_resolved_url(playback_url)
+
+def get_metadata(refresh=False):
+    metadata = rntm.get_metadata(refresh)
+    return metadata
 
 if __name__ == '__main__':
     try:
