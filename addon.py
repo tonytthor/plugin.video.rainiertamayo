@@ -24,9 +24,10 @@ def index():
 def get_newest():
     """Display newest videos."""
     videos = rainiertamayo.get_newest()
-    items = [{'label': video,
-              'path': plugin.url_for('get_video',
-                                     video=videos[video])
+    items = [{'label': video['label'],
+              'path': video['path'],
+              'thumbnail': video['thumbnail'],
+              'is_playable': True
     } for video in videos]
     return plugin.finish(items)
 

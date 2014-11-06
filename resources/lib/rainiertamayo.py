@@ -18,6 +18,7 @@ class RainierTamayo:
         """browser"""
 
         # initialise a first connection
+        self.browser.set_handle_robots(False)
         self.browser.open(MAIN_URL)
 
     def get_newest(self):
@@ -25,8 +26,20 @@ class RainierTamayo:
 
         :returns: a dictionary {<label>: <url>}
         """
-        newest = {}
+        html_tree = self.get_html_tree()
 
+        newest = []
+
+        # start parsing
+        main_elem = html_tree.find('div', {'id':'main'} )
+        for clip in main_elem.findAll('a', {'class':'clip-link'}):
+            title = clip.get('title')
+            url = clip.get('href')
+            img = clip.find('img').get('src')
+
+            newest.append({'label': title, 
+                           'path': url,
+                           'thumbnail': img})
         return newest
 
     def get_categories(self):
