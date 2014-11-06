@@ -1,5 +1,8 @@
 import re
 
+from BeautifulSoup import BeautifulSoup
+from mechanize import Browser
+
 MAIN_URL = 'http://www.rainiertamayo.com'
 
 
@@ -11,7 +14,11 @@ class RainierTamayo:
 
     def __init__(self):
         """Constuctor."""
-        pass
+        self.browser = Browser()
+        """browser"""
+
+        # initialise a first connection
+        self.browser.open(MAIN_URL)
 
     def get_newest(self):
         """Return all the newest videos.
@@ -19,6 +26,7 @@ class RainierTamayo:
         :returns: a dictionary {<label>: <url>}
         """
         newest = {}
+
         return newest
 
     def get_categories(self):
@@ -28,6 +36,7 @@ class RainierTamayo:
         """
         categories = {}
         return categories
+
 
     def get_series(self):
         """Return all the TV series.
@@ -56,3 +65,20 @@ class RainierTamayo:
         """
         videos = {}
         return videos, None
+
+    def get_html_tree(self, url=MAIN_URL):
+        """Return HTML tree as url is browse
+
+        :param url: URL to browse
+
+        :returns: an HTML tree
+        """
+        html = ""
+        try:
+            response = self.browser.open(url)
+            html = response.read()
+        except:
+            raise NetworkError
+        else:
+            html_tree = BeautifulSoup(html, convertEntities=BeautifulSoup.HTML_ENTITIES)
+            return html_tree

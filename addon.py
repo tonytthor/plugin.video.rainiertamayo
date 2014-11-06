@@ -17,7 +17,7 @@ def index():
     items = [{'label': entry,
               'path': plugin.url_for(entries[entry])
     } for entry in entries]
-    return items
+    return plugin.finish(items)
 
 
 @plugin.route('/newest')
@@ -28,7 +28,7 @@ def get_newest():
               'path': plugin.url_for('get_video',
                                      video=videos[video])
     } for video in videos]
-    return items
+    return plugin.finish(items)
 
 
 @plugin.route('/categories')
@@ -39,7 +39,7 @@ def get_categories():
               'path': plugin.url_for('get_category',
                                      category=categories[category])
     } for category in categories]
-    return items
+    return plugin.finish(items)
 
 
 @plugin.route('/series')
@@ -50,7 +50,7 @@ def get_series():
               'path': plugin.url_for('get_serie',
                                      serie=series[serie])
     } for serie in series]
-    return items
+    return plugin.finish(items)
 
 @plugin.route('/categories/<category>/<page>')
 def get_category(category, page='1'):
@@ -73,7 +73,7 @@ def get_category(category, page='1'):
         items.insert(0, {'label': '<< Previous',
                          'path': plugin.url_for('get_category', page=str(page - 1))
         })
-    return items
+    return plugin.finish(items)
 
 @plugin.route('/series/<serie>/<season>/<page>')
 def get_serie(serie, season='1', page='1'):
@@ -101,7 +101,7 @@ def get_serie(serie, season='1', page='1'):
                                                 season=season,
                                                 page=str(page - 1))
         })
-    return items
+    return plugin.finish(items)
 
 
 @plugin.route('/videos/<page>')
@@ -122,7 +122,7 @@ def get_videos(page='1'):
         items.insert(0, {'label': '<< Previous',
                          'path': plugin.url_for('show_videos', page=str(page - 1))
         })
-    return items
+    return plugin.finish(items)
     
 
 @plugin.route('/video/<video>')
