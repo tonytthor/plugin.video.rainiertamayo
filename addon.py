@@ -1,5 +1,15 @@
+import os
+import sys
+
 from xbmcswift2 import Plugin
-from resources.lib.rainiertamayo import RainierTamayo
+import xbmcaddon
+
+__addonname__ = 'plugin.video.rainiertamayo'
+__addonpath__ = xbmcaddon.Addon(id=__addonname__).getAddonInfo('path')
+
+# append lib directory
+sys.path.append(os.path.join(__addonpath__, 'resources', 'lib'))
+from rainiertamayo import RainierTamayo
 
 
 plugin = Plugin()
@@ -7,6 +17,7 @@ rainiertamayo = RainierTamayo()
 
 # TODO : Factor function get_<item>
 # for item in ITEMS = ['newest', 'categories', 'series']
+
 
 @plugin.route('/')
 def index():
@@ -16,7 +27,7 @@ def index():
                'TV Series': 'get_series'}
     items = [{'label': entry,
               'path': plugin.url_for(entries[entry])
-    } for entry in entries]
+              } for entry in entries]
     return plugin.finish(items)
 
 
@@ -25,10 +36,10 @@ def get_newest():
     """Display newest videos."""
     videos = rainiertamayo.get_newest()
     items = [{'label': video['label'],
-              'path': video['path'],
-              'thumbnail': video['thumbnail'],
-              'is_playable': True
-    } for video in videos]
+              'path': plugin.url_for('get_video',
+                                     url=video['path']),
+              'thumbnail': video['thumbnail']
+              } for video in videos]
     return plugin.finish(items)
 
 
@@ -39,7 +50,7 @@ def get_categories():
     items = [{'label': category,
               'path': plugin.url_for('get_category',
                                      category=categories[category])
-    } for category in categories]
+              } for category in categories]
     return plugin.finish(items)
 
 
@@ -50,13 +61,14 @@ def get_series():
     items = [{'label': serie,
               'path': plugin.url_for('get_serie',
                                      serie=series[serie])
-    } for serie in series]
+              } for serie in series]
     return plugin.finish(items)
+
 
 @plugin.route('/categories/<category>/<page>')
 def get_category(category, page='1'):
     """Display videos for the provided category.
-    
+
     :param category: category to display.
     :param page:     category page to display."""
     videos, next_page = rainiertamayo.get_category(category, page)
@@ -64,22 +76,23 @@ def get_category(category, page='1'):
     items = [{'label': video,
               'path': plugin.url_for('get_video',
                                      video=videos[video])
-    } for video in videos]
+              } for video in videos]
     if next_page:
         items.insert(0, {'label': 'Next >>',
                          'path': plugin.url_for('get_category', page=str(page + 1))
-        })
-    
+                         })
+
     if page > 1:
         items.insert(0, {'label': '<< Previous',
                          'path': plugin.url_for('get_category', page=str(page - 1))
-        })
+                         })
     return plugin.finish(items)
+
 
 @plugin.route('/series/<serie>/<season>/<page>')
 def get_serie(serie, season='1', page='1'):
     """Display videos for the provided serie.
-    
+
     :param serie:  serie to display.
     :param season: season to display.
     :param season: page to display."""
@@ -88,27 +101,27 @@ def get_serie(serie, season='1', page='1'):
     items = [{'label': video,
               'path': plugin.url_for('get_video',
                                      video=videos[video])
-    } for video in videos]
+              } for video in videos]
     if next_page:
         items.insert(0, {'label': 'Next >>',
                          'path': plugin.url_for('get_serie',
                                                 season=season,
                                                 page=str(page + 1))
-        })
-    
+                         })
+
     if page > 1:
         items.insert(0, {'label': '<< Previous',
                          'path': plugin.url_for('get_serie',
                                                 season=season,
                                                 page=str(page - 1))
-        })
+                         })
     return plugin.finish(items)
 
 
 @plugin.route('/videos/<page>')
 def get_videos(page='1'):
     """Display videos for the provided page.
-    
+
     :param page: page to display."""
     page = int(page)
     videos, next_page = get_videos(page)
@@ -117,34 +130,27 @@ def get_videos(page='1'):
     if next_page:
         items.insert(0, {'label': 'Next >>',
                          'path': plugin.url_for('show_videos', page=str(page + 1))
-        })
-    
+                         })
+
     if page > 1:
         items.insert(0, {'label': '<< Previous',
                          'path': plugin.url_for('show_videos', page=str(page - 1))
-        })
+                         })
     return plugin.finish(items)
-    
 
-@plugin.route('/video/<video>')
-def get_video(video):
+
+@plugin.route('/video/<url>')
+def get_video(url):
     """Display the provided video.
 
     :param video: video to display."""
-    items = get_video_items(category)
-    return []
+    media_url = rainiertamayo.get_video(url)
+    plugin.log.info('Playing url: %s' % media_url)
+    plugin.set_resolved_url(media_url)
 
-def play_video(video):
-    """Play the video.
-
-    :param video: video to play."""
-    lecture = Lecture.from_url(url)
-    url = 'plugin://plugin.video.youtube/?action=play_video&videoid=%s' % lecture.youtube_id
-    plugin.log.info('Playing url: %s' % url)
-    plugin.set_resolved_url(url)
 
 if __name__ == '__main__':
     try:
         plugin.run()
-    except Exception:
+    except Exception, e:
         plugin.log.error(e)

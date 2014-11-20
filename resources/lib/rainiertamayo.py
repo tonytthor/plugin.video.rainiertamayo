@@ -1,7 +1,8 @@
 import re
 
+import dryscrape
 from BeautifulSoup import BeautifulSoup
-from mechanize import Browser
+from urllib import unquote
 
 MAIN_URL = 'http://www.rainiertamayo.com'
 
@@ -14,12 +15,8 @@ class RainierTamayo:
 
     def __init__(self):
         """Constuctor."""
-        self.browser = Browser()
-        """browser"""
-
-        # initialise a first connection
-        self.browser.set_handle_robots(False)
-        self.browser.open(MAIN_URL)
+        self.session = dryscrape.Session(base_url=MAIN_URL)
+        """session"""
 
     def get_newest(self):
         """Return all the newest videos.
@@ -32,10 +29,10 @@ class RainierTamayo:
 
         # start parsing
         main_elem = html_tree.find('div', {'id':'main'} )
-        for clip in main_elem.findAll('a', {'class':'clip-link'}):
-            title = clip.get('title')
-            url = clip.get('href')
-            img = clip.find('img').get('src')
+        for clip_elem in main_elem.findAll('a', {'class':'clip-link'}):
+            title = clip_elem.get('title')
+            url = clip_elem.get('href')
+            img = clip_elem.find('img').get('src')
 
             newest.append({'label': title, 
                            'path': url,
@@ -79,6 +76,27 @@ class RainierTamayo:
         videos = {}
         return videos, None
 
+    def get_video(self, url):
+        """Return all the videos for a given serie.
+
+        :param url: URL
+
+        :returns: the media file's url
+        """
+        html_tree = self.get_html_tree(url)
+
+        # HTML 5 <video> tag
+        video_elem = html_tree.find('video')
+        if video_elem:
+            source_elem = video_elem.find('source')
+            media_url = source_elem.get('src')
+        else:
+            # JavaScript <embed> tag
+            embed_elem = html_tree.find('embed')
+            media_url = unquote(embed_elem.get('flashvars'))
+
+        return media_url
+
     def get_html_tree(self, url=MAIN_URL):
         """Return HTML tree as url is browse
 
@@ -88,8 +106,8 @@ class RainierTamayo:
         """
         html = ""
         try:
-            response = self.browser.open(url)
-            html = response.read()
+            self.session.visit(url)
+            html = self.session.body()
         except:
             raise NetworkError
         else:
