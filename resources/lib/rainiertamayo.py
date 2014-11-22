@@ -1,4 +1,5 @@
 import re
+import os
 
 import dryscrape
 from BeautifulSoup import BeautifulSoup
@@ -48,7 +49,18 @@ class RainierTamayo:
 
         :returns: a dictionary {<label>: <url>}
         """
-        categories = {}
+        html_tree = self.get_html_tree()
+
+        categories = []
+
+        # start parsing
+        main_elem = html_tree.find('div', {'class':'tagcloud'})
+        for cat_elem in main_elem.findAll('a'):
+            name = cat_elem.getText()
+            url = cat_elem.get('href')
+
+            categories.append({'label': name, 
+                               'path': url})
         return categories
 
 
@@ -57,7 +69,7 @@ class RainierTamayo:
 
         :returns: a dictionary {<label>: <url>}
         """
-        series = {}
+        series = []
         return series
 
     def get_category(self, category, page='1'):
@@ -67,8 +79,24 @@ class RainierTamayo:
         :param page:     category page
         :returns: a dictionary {<label>: <url>} and next_page
         """
-        videos = {}
-        return video, None
+        url = os.path.join(MAIN_URL,
+                           'genre', category,
+                           'page', page)
+        html_tree = self.get_html_tree(url)
+
+        videos = []
+
+        # start parsing
+        main_elem = html_tree.find('div', {'id':'main'} )
+        for clip_elem in main_elem.findAll('a', {'class':'clip-link'}):
+            title = clip_elem.get('title')
+            url = clip_elem.get('href')
+            img = clip_elem.find('img').get('src')
+
+            videos.append({'label': title, 
+                           'path': url,
+                           'thumbnail': img})
+        return videos, None
 
     def get_serie(self, serie, season='1', page='1'):
         """Return all the videos for a given serie.

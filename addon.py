@@ -23,7 +23,8 @@ rainiertamayo = RainierTamayo()
 def index():
     """Display plugin's main menu."""
     entries = {'Newest Videos': 'get_newest',
-               'Movies': 'get_categories',
+               'Movies': 'get_movies',
+               'Categories': 'get_categories',
                'TV Series': 'get_series'}
     items = [{'label': entry,
               'path': plugin.url_for(entries[entry])
@@ -47,11 +48,17 @@ def get_newest():
 def get_categories():
     """Display all available categories."""
     categories = rainiertamayo.get_categories()
-    items = [{'label': category,
+    items = [{'label': category['label'],
               'path': plugin.url_for('get_category',
-                                     category=categories[category])
+                                     category=category['path'],
+                                     page='1')
               } for category in categories]
     return plugin.finish(items)
+
+
+@plugin.route('/movies')
+def get_movies():
+    pass
 
 
 @plugin.route('/series')
@@ -73,18 +80,22 @@ def get_category(category, page='1'):
     :param page:     category page to display."""
     videos, next_page = rainiertamayo.get_category(category, page)
 
-    items = [{'label': video,
+    items = [{'label': video['label'],
               'path': plugin.url_for('get_video',
-                                     video=videos[video])
+                                     url=video['path'])
               } for video in videos]
     if next_page:
         items.insert(0, {'label': 'Next >>',
-                         'path': plugin.url_for('get_category', page=str(page + 1))
+                         'path': plugin.url_for('get_category',
+                                                category=category,
+                                                page=str(page + 1))
                          })
 
     if page > 1:
         items.insert(0, {'label': '<< Previous',
-                         'path': plugin.url_for('get_category', page=str(page - 1))
+                         'path': plugin.url_for('get_category',
+                                                category=category,
+                                                page=str(page - 1))
                          })
     return plugin.finish(items)
 
@@ -98,9 +109,9 @@ def get_serie(serie, season='1', page='1'):
     :param season: page to display."""
     videos, next_page = rainiertamayo.get_serie(serie, season, page)
 
-    items = [{'label': video,
+    items = [{'label': video['label'],
               'path': plugin.url_for('get_video',
-                                     video=videos[video])
+                                     url=video['path'])
               } for video in videos]
     if next_page:
         items.insert(0, {'label': 'Next >>',
