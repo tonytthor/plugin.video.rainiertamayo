@@ -7,6 +7,10 @@ from urllib import unquote
 MAIN_URL = 'http://www.rainiertamayo.com'
 
 
+class NetworkError(Exception):
+    pass
+
+ 
 class RainierTamayo:
     """RainierTamayo API class.
 
