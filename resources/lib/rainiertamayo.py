@@ -23,26 +23,25 @@ class RainierTamayo:
         self.session = dryscrape.Session(base_url=MAIN_URL)
         """session"""
 
-    def get_newest(self):
-        """Return all the newest videos.
+    def get_newests(self):
+        """Return all the newests videos.
 
         :returns: a dictionary {<label>: <url>}
         """
-        html_tree = self.get_html_tree()
+        videos = get_videos()
 
-        newest = []
+        return videos
 
-        # start parsing
-        main_elem = html_tree.find('div', {'id':'main'} )
-        for clip_elem in main_elem.findAll('a', {'class':'clip-link'}):
-            title = clip_elem.get('title')
-            url = clip_elem.get('href')
-            img = clip_elem.find('img').get('src')
+    def get_movies(self):
+        """Return all the movies videos.
 
-            newest.append({'label': title, 
-                           'path': url,
-                           'thumbnail': img})
-        return newest
+        :returns: a dictionary {<label>: <url>}
+        """
+        videos = get_videos('movie')
+
+        nav_elem = html_tree.find('a', {'class': 'nextpostslink'})
+
+        return videos, nav_elem
 
     def get_categories(self):
         """Return all the video categories.
@@ -54,7 +53,7 @@ class RainierTamayo:
         categories = []
 
         # start parsing
-        main_elem = html_tree.find('div', {'class':'tagcloud'})
+        main_elem = html_tree.find('div', {'class': 'tagcloud'})
         for cat_elem in main_elem.findAll('a'):
             name = cat_elem.getText()
             url = cat_elem.get('href')
@@ -69,7 +68,21 @@ class RainierTamayo:
 
         :returns: a dictionary {<label>: <url>}
         """
+        html_tree = self.get_html_tree()
+
         series = []
+
+        # start parsing
+        series_elem = html_tree.find('ul', {'class': 'sub-menu'})
+        for serie_elem in series_elem.findAll('li', recursive=False):
+            link_elem = serie_elem.find('a')
+
+            name = link_elem.getText()
+            url = link_elem.get('href')
+
+            series.append({'label': name,
+                           'path': url})
+        print(series)
         return series
 
     def get_category(self, category, page='1'):
@@ -79,24 +92,13 @@ class RainierTamayo:
         :param page:     category page
         :returns: a dictionary {<label>: <url>} and next_page
         """
-        url = os.path.join(MAIN_URL,
-                           'genre', category,
-                           'page', page)
-        html_tree = self.get_html_tree(url)
+        url = os.path.join('genre', category, 'page', page)
 
-        videos = []
+        videos = get_videos(url)
 
-        # start parsing
-        main_elem = html_tree.find('div', {'id':'main'} )
-        for clip_elem in main_elem.findAll('a', {'class':'clip-link'}):
-            title = clip_elem.get('title')
-            url = clip_elem.get('href')
-            img = clip_elem.find('img').get('src')
+        nav_elem = html_tree.find('a', {'class': 'nextpostslink'})
 
-            videos.append({'label': title, 
-                           'path': url,
-                           'thumbnail': img})
-        return videos, None
+        return videos, nav_elem
 
     def get_serie(self, serie, season='1', page='1'):
         """Return all the videos for a given serie.
@@ -105,8 +107,37 @@ class RainierTamayo:
         :param page:     category page
         :returns: a dictionary {<label>: <url>} and next_page
         """
-        videos = {}
-        return videos, None
+        url = os.path.join('page', page, '?s="%s:+Season+%s"' % (serie, season))
+
+        videos = get_videos(url)
+
+        nav_elem = html_tree.find('a', {'class': 'nextpostslink'})
+
+        return videos, nav_elem
+
+    def get_videos(self, url='/'):
+        """Return all the videos for a given url.
+
+        :param url: URL
+
+        :returns: the list of label/path/thumbnail for each video
+        """
+
+        videos = []
+        html_tree = self.get_html_tree(url)
+
+        # start parsing
+        main_elem = html_tree.find('div', {'id': 'main'} )
+        for clip_elem in main_elem.findAll('a', {'class': 'clip-link'}):
+            title = clip_elem.get('title')
+            url = clip_elem.get('href')
+            img = clip_elem.find('img').get('src')
+
+            videos.append({'label': title, 
+                           'path': url,
+                           'thumbnail': img})
+
+        return videos
 
     def get_video(self, url):
         """Return all the videos for a given serie.
@@ -126,10 +157,11 @@ class RainierTamayo:
             # JavaScript <embed> tag
             embed_elem = html_tree.find('embed')
             media_url = unquote(embed_elem.get('flashvars'))
+            media_url = media_url.split('|')[-1]
 
         return media_url
 
-    def get_html_tree(self, url=MAIN_URL):
+    def get_html_tree(self, url='/'):
         """Return HTML tree as url is browse
 
         :param url: URL to browse
